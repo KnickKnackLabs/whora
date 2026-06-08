@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+#MISE description="Show stopwatch status"
+#USAGE flag "--id <id>" default="" help="Only show one stopwatch id"
+#USAGE flag "--label <label>" default="" help="Filter by exact label when listing"
+#USAGE flag "--tag <tag>" var=#true default="" help="Filter by tag; repeatable"
+#USAGE flag "--json" default=#false help="Print machine-readable JSON"
+#USAGE example "mise run stopwatch:status" header="Show all stopwatches"
+#USAGE example "mise run stopwatch:status --id review" header="Show one stopwatch"
+#USAGE example "mise run stopwatch:status --label 'min thing' --json" header="Filter by label"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/time.sh"
+
+stopwatch_row() {
+  local dir id label started_epoch now elapsed tags
+  dir="$1"
+  [ -d "$dir" ] || return 0
+
+  if ! id="$(time_read_field "$dir" id)"; then
+    id="$(basename "$dir")"
+  fi
+  if ! label="$(time_read_field "$dir" label)"; then
+    label=""
+  fi
+  if ! started_epoch="$(time_read_field "$dir" started_epoch)"; then
+    printf 'stopwatch %s: invalid state (missing started_epoch)\n' "$id" >&2
+    return 1
+  fi
+
+  now="$(time_epoch_now)"
+  elapsed=$((now - started_epoch))
+  tags="$(time_tags_inline "$dir")"
+  printf '%s\t%s\t%s\t%s\t%s\n' "$id" "running" "$(time_format_duration "$elapsed")" "$label" "$tags"
+}
+
+id="$(time_normalize_empty "${usage_id:-}")"
+label_filter="$(time_normalize_empty "${usage_label:-}")"
+json="${usage_json:-false}"
+filter_tags=()
+while IFS= read -r tag; do
+  filter_tags+=("$tag")
+done < <(time_usage_words "${usage_tag:-}")
+
+if [ -n "$id" ]; then
+  time_require_id "$id"
+  dir="$(time_item_dir stopwatch "$id")"
+  if [ ! -d "$dir" ]; then
+    printf 'time: no such stopwatch: %s\n' "$id" >&2
+    exit 1
+  fi
+  if [ "$json" = "true" ]; then
+    time_stopwatch_json "$dir"
+  else
+    {
+      printf 'ID\tSTATUS\tELAPSED\tLABEL\tTAGS\n'
+      stopwatch_row "$dir"
+    } | time_table
+  fi
+  exit 0
+fi
+
+kind_dir="$(time_kind_dir stopwatch)"
+items=()
+rows=()
+found=false
+if [ -d "$kind_dir" ]; then
+  for dir in "$kind_dir"/*; do
+    [ -d "$dir" ] || continue
+    if [ ${#filter_tags[@]} -gt 0 ]; then
+      time_item_matches "$dir" "$label_filter" "${filter_tags[@]}" || continue
+    else
+      time_item_matches "$dir" "$label_filter" || continue
+    fi
+    found=true
+    if [ "$json" = "true" ]; then
+      items+=("$(time_stopwatch_json "$dir")")
+    else
+      rows+=("$(stopwatch_row "$dir")")
+    fi
+  done
+fi
+
+if [ "$json" = "true" ]; then
+  if [ ${#items[@]} -gt 0 ]; then
+    printf '%s\n' "${items[@]}" | jq -s .
+  else
+    printf '[]\n'
+  fi
+elif $found; then
+  {
+    printf 'ID\tSTATUS\tELAPSED\tLABEL\tTAGS\n'
+    printf '%s\n' "${rows[@]}"
+  } | time_table
+else
+  time_dim "No stopwatches"
+fi

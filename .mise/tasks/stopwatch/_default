@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#MISE description="Show stopwatch summary"
+#USAGE flag "--label <label>" default="" help="Filter by exact label"
+#USAGE flag "--tag <tag>" var=#true default="" help="Filter by tag; repeatable"
+#USAGE flag "--json" default=#false help="Print machine-readable JSON"
+#USAGE example "mise run stopwatch" header="Read-only stopwatch summary"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/time.sh"
+
+args=()
+if [ "${usage_json:-false}" = "true" ]; then
+  args+=(--json)
+fi
+label="$(time_normalize_empty "${usage_label:-}")"
+if [ -n "$label" ]; then
+  args+=(--label "$label")
+fi
+while IFS= read -r tag; do
+  args+=(--tag "$tag")
+done < <(time_usage_words "${usage_tag:-}")
+
+exec mise run stopwatch:status "${args[@]+"${args[@]}"}"

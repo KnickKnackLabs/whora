@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#MISE description="Start a stopwatch"
+#USAGE flag "--id <id>" default="" help="Stopwatch id; generated when omitted"
+#USAGE flag "--label <label>" default="" help="Human label for this stopwatch"
+#USAGE flag "--tag <tag>" var=#true default="" help="Generic association tag; repeatable"
+#USAGE flag "--replace" default=#false help="Replace an existing stopwatch with the same id"
+#USAGE flag "--json" default=#false help="Print machine-readable JSON"
+#USAGE example "mise run stopwatch:start --id review --label 'PR review'" header="Start a named stopwatch"
+#USAGE example "mise run stopwatch:start --label 'quick probe' --json" header="Start with a generated id"
+set -euo pipefail
+
+source "$MISE_CONFIG_ROOT/lib/time.sh"
+
+id="$(time_normalize_empty "${usage_id:-}")"
+label="$(time_normalize_empty "${usage_label:-}")"
+replace="${usage_replace:-false}"
+json="${usage_json:-false}"
+generated_id=false
+
+if [ -z "$id" ]; then
+  id="$(time_new_id stopwatch)"
+  generated_id=true
+fi
+time_require_id "$id"
+
+dir="$(time_item_dir stopwatch "$id")"
+if [ -d "$dir" ] && [ "$replace" != "true" ]; then
+  printf 'time: stopwatch already exists: %s (use --replace or stop it first)\n' "$id" >&2
+  exit 1
+fi
+
+if [ -d "$dir" ]; then
+  rm -rf "$dir"
+fi
+mkdir -p "$dir"
+
+now_epoch="$(time_epoch_now)"
+time_write_field "$dir" id "$id"
+time_write_field "$dir" kind "stopwatch"
+time_write_field "$dir" started_epoch "$now_epoch"
+time_write_field "$dir" started_at "$(time_iso_now)"
+time_write_field "$dir" label "$label"
+time_write_field "$dir" origin_pwd "${MISE_ORIGINAL_CWD:-$PWD}"
+
+tags=()
+while IFS= read -r tag; do
+  tags+=("$tag")
+done < <(time_usage_words "${usage_tag:-}")
+if [ ${#tags[@]} -gt 0 ]; then
+  time_write_tags "$dir" "${tags[@]}"
+else
+  time_write_tags "$dir"
+fi
+
+if [ "$json" = "true" ]; then
+  time_stopwatch_json "$dir" | jq --argjson generated_id "$generated_id" '. + {generated_id:$generated_id}'
+  exit 0
+fi
+
+time_success "✓ Stopwatch started"
+printf 'ID: %s\n' "$id"
+if [ "$generated_id" = "true" ]; then
+  printf 'Generated: yes\n'
+fi
+if [ -n "$label" ]; then
+  printf 'Label: %s\n' "$label"
+fi
+if [ ${#tags[@]} -gt 0 ]; then
+  printf 'Tags: %s\n' "$(time_tags_inline "$dir")"
+fi
+printf 'State: %s\n' "$dir"
+printf '\n'
+time_dim "Next:"
+printf '  mise run stopwatch:status --id %s\n' "$id"
+printf '  mise run stopwatch:stop --id %s\n' "$id"
