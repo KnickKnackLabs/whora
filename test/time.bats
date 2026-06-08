@@ -260,3 +260,13 @@ json_value() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"--id may contain only"* ]]
 }
+
+@test "ids reject dot path segments" {
+  run whora stopwatch:start --id .
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--id cannot be dot or dot-dot"* ]]
+
+  run whora countdown:start 10s --id ..
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"--id cannot be dot or dot-dot"* ]]
+}

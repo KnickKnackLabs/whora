@@ -54,6 +54,10 @@ time_require_id() {
       printf 'time: --id cannot be empty\n' >&2
       return 1
       ;;
+    "."|"..")
+      printf 'time: --id cannot be dot or dot-dot: %s\n' "$id" >&2
+      return 1
+      ;;
     *[!A-Za-z0-9._-]*)
       printf 'time: --id may contain only letters, numbers, dot, underscore, and dash: %s\n' "$id" >&2
       return 1
