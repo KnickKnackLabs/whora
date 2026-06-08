@@ -7,7 +7,7 @@
 Ask what hour it is, then make the work answer.
 
 ![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 15](https://img.shields.io/badge/tests-15-brightgreen?style=flat)](test/)
+[![tests: 16](https://img.shields.io/badge/tests-16-brightgreen?style=flat)](test/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -74,7 +74,7 @@ mise exec -- readme build --check
 git diff --check
 ```
 
-The current suite has **15 tests** and **9 convention lints** configured.
+The current suite has **16 tests** and **9 convention lints** configured.
 
 <div align="center">
 
