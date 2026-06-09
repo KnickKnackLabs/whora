@@ -1,0 +1,29 @@
+#!/usr/bin/env -S uv run --script
+#MISE description="Stop a stopwatch"
+#USAGE flag "--id <id>" required=#true help="Stopwatch id"
+#USAGE flag "--json" default=#false help="Print machine-readable JSON"
+#USAGE example "mise run stopwatch:stop --id review" header="Stop a named stopwatch"
+# /// script
+# requires-python = ">=3.10"
+# ///
+
+import os
+import sys
+
+sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
+
+from whora import StopArgs, TimerStore, WhoraError, bool_env, main_error, normalize_empty, stopwatch_stop
+
+
+def main() -> int:
+    args = StopArgs(
+        id=normalize_empty(os.environ.get("usage_id")),
+        json_output=bool_env(os.environ.get("usage_json")),
+    )
+    return stopwatch_stop(TimerStore.from_env(os.environ), args)
+
+
+try:
+    raise SystemExit(main())
+except WhoraError as exc:
+    raise SystemExit(main_error(exc)) from None

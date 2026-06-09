@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#MISE description="Run Python unit tests"
+#USAGE arg "[args]" default="" var=#true help="pytest arguments"
+#USAGE example "mise run python:test" header="Run Python unit tests"
+#USAGE example "mise run python:test --filter duration" header="Filter Python tests by name"
+set -euo pipefail
+
+cd "$MISE_CONFIG_ROOT"
+
+args=()
+if [ -n "${usage_args:-}" ]; then
+  while IFS= read -r arg; do
+    [ -z "$arg" ] && continue
+    args+=("$arg")
+  done < <(printf '%s' "${usage_args}" | xargs printf '%s\n')
+fi
+
+exec uv run --locked pytest "${args[@]+"${args[@]}"}"

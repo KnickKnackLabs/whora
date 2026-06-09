@@ -1,0 +1,44 @@
+#!/usr/bin/env -S uv run --script
+#MISE description="Show countdown status"
+#USAGE flag "--id <id>" default="" help="Only show one countdown id"
+#USAGE flag "--label <label>" default="" help="Filter by exact label when listing"
+#USAGE flag "--tag <tag>" var=#true default="" help="Filter by tag; repeatable"
+#USAGE flag "--json" default=#false help="Print machine-readable JSON"
+#USAGE example "mise run countdown:status" header="Show all countdowns"
+#USAGE example "mise run countdown:status --id tea" header="Show one countdown"
+#USAGE example "mise run countdown:status --label 'check min' --json" header="Filter by label"
+# /// script
+# requires-python = ">=3.10"
+# ///
+
+import os
+import sys
+
+sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
+
+from whora import (
+    StatusArgs,
+    TimerStore,
+    WhoraError,
+    bool_env,
+    countdown_status,
+    main_error,
+    normalize_empty,
+    usage_words,
+)
+
+
+def main() -> int:
+    args = StatusArgs(
+        id=normalize_empty(os.environ.get("usage_id")),
+        label_filter=normalize_empty(os.environ.get("usage_label")),
+        tags=usage_words(os.environ.get("usage_tag")),
+        json_output=bool_env(os.environ.get("usage_json")),
+    )
+    return countdown_status(TimerStore.from_env(os.environ), args)
+
+
+try:
+    raise SystemExit(main())
+except WhoraError as exc:
+    raise SystemExit(main_error(exc)) from None

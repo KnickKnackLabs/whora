@@ -1,0 +1,17 @@
+# Local mise overrides
+mise.local.toml
+
+# Editor / OS noise
+.DS_Store
+*.swp
+
+# Runtime scratch
+*.log
+tmp/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# JavaScript package manager noise if a copied repo grows one
+node_modules/

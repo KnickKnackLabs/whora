@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#MISE description="Run tests and Python lint"
+#MISE dir="{{config_root}}"
+#USAGE arg "[args]" default="" var=#true help="BATS test suites or bats arguments"
+#USAGE example "mise run test" header="Run full validation: BATS, pytest, and ruff"
+#USAGE example "mise run test skeleton" header="Run a specific BATS suite by name"
+#USAGE example "mise run test --filter doctor" header="Filter BATS tests by name"
+set -euo pipefail
+
+TEST_DIR="$MISE_CONFIG_ROOT/test"
+
+args=()
+if [ -n "${usage_args:-}" ]; then
+  while IFS= read -r arg; do
+    [ -z "$arg" ] && continue
+    args+=("$arg")
+  done < <(printf '%s' "${usage_args}" | xargs printf '%s\n')
+fi
+
+resolved=()
+has_target=false
+
+for arg in ${args[@]+"${args[@]}"}; do
+  if [[ "$arg" != -* && "$arg" != *.bats && -f "$TEST_DIR/$arg.bats" ]]; then
+    resolved+=("$TEST_DIR/$arg.bats")
+    has_target=true
+  else
+    [[ "$arg" == *.bats || -d "$arg" ]] && has_target=true
+    resolved+=("$arg")
+  fi
+done
+
+full_validation=false
+if ! $has_target; then
+  resolved+=("$TEST_DIR/")
+fi
+if [ ${#args[@]} -eq 0 ]; then
+  full_validation=true
+fi
+
+bats --print-output-on-failure "${resolved[@]}"
+
+if $full_validation; then
+  mise run python:test
+  mise run python:lint
+fi
