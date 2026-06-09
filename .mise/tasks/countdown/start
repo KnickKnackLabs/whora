@@ -27,6 +27,7 @@ from whora import (
     countdown_start,
     main_error,
     normalize_empty,
+    origin_pwd_from_env,
     parse_duration,
     usage_words,
 )
@@ -43,7 +44,7 @@ def main() -> int:
         replace=bool_env(os.environ.get("usage_replace")),
         notify=notify,
         json_output=bool_env(os.environ.get("usage_json")),
-        origin_pwd=os.environ.get("MISE_ORIGINAL_CWD") or os.getcwd(),
+        origin_pwd=origin_pwd_from_env(os.environ),
     )
     return countdown_start(TimerStore.from_env(os.environ), args)
 

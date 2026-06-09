@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from whora import TimerStore, WhoraError, bool_env, normalize_empty, usage_words
+from whora import TimerStore, WhoraError, bool_env, normalize_empty, origin_pwd_from_env, usage_words
 from whora.jsonio import write_json_atomic
 
 
@@ -70,6 +70,21 @@ def test_write_json_atomic_replaces_existing_file(tmp_path):
 
 def test_usage_words_parses_mise_shell_escaped_values():
     assert usage_words("'repo=whora' 'label with spaces' ''") == ("repo=whora", "label with spaces")
+
+
+def test_origin_pwd_prefers_shiv_package_scoped_caller_pwd():
+    assert (
+        origin_pwd_from_env(
+            {
+                "WHORA_CALLER_PWD": "/caller",
+                "MISE_ORIGINAL_CWD": "/package",
+            },
+            cwd="/fallback",
+        )
+        == "/caller"
+    )
+    assert origin_pwd_from_env({"MISE_ORIGINAL_CWD": "/mise"}, cwd="/fallback") == "/mise"
+    assert origin_pwd_from_env({}, cwd="/fallback") == "/fallback"
 
 
 def test_normalize_empty_and_bool_env_helpers():
