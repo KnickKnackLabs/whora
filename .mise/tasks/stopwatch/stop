@@ -1,61 +1,29 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S uv run --script
 #MISE description="Stop a stopwatch"
 #USAGE flag "--id <id>" required=#true help="Stopwatch id"
 #USAGE flag "--json" default=#false help="Print machine-readable JSON"
 #USAGE example "mise run stopwatch:stop --id review" header="Stop a named stopwatch"
-set -euo pipefail
+# /// script
+# requires-python = ">=3.10"
+# ///
 
-source "$MISE_CONFIG_ROOT/lib/time.sh"
+import os
+import sys
 
-id="$(time_normalize_empty "${usage_id:-}")"
-json="${usage_json:-false}"
-time_require_id "$id"
+sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
 
-dir="$(time_item_dir stopwatch "$id")"
-if [ ! -d "$dir" ]; then
-  printf 'time: no such stopwatch: %s\n' "$id" >&2
-  exit 1
-fi
+from whora import StopArgs, TimerStore, WhoraError, bool_env, main_error, normalize_empty, stopwatch_stop
 
-if ! started_epoch="$(time_read_field "$dir" started_epoch)"; then
-  printf 'time: invalid stopwatch state: %s\n' "$dir" >&2
-  exit 1
-fi
-if ! label="$(time_read_field "$dir" label)"; then
-  label=""
-fi
-if ! started_at="$(time_read_field "$dir" started_at)"; then
-  started_at=""
-fi
-if ! origin_pwd="$(time_read_field "$dir" origin_pwd)"; then
-  origin_pwd=""
-fi
-tags_json="$(time_tags_json "$dir")"
 
-now="$(time_epoch_now)"
-elapsed=$((now - started_epoch))
-rm -rf "$dir"
+def main() -> int:
+    args = StopArgs(
+        id=normalize_empty(os.environ.get("usage_id")),
+        json_output=bool_env(os.environ.get("usage_json")),
+    )
+    return stopwatch_stop(TimerStore.from_env(os.environ), args)
 
-if [ "$json" = "true" ]; then
-  jq -nc \
-    --arg kind "stopwatch" \
-    --arg id "$id" \
-    --arg status "stopped" \
-    --arg label "$label" \
-    --arg started_at "$started_at" \
-    --arg stopped_at "$(time_iso_now)" \
-    --arg origin_pwd "$origin_pwd" \
-    --argjson started_epoch "$started_epoch" \
-    --argjson stopped_epoch "$now" \
-    --argjson elapsed_seconds "$elapsed" \
-    --argjson tags "$tags_json" \
-    '{kind:$kind,id:$id,status:$status,label:$label,tags:$tags,started_at:$started_at,started_epoch:$started_epoch,stopped_at:$stopped_at,stopped_epoch:$stopped_epoch,elapsed_seconds:$elapsed_seconds,origin_pwd:$origin_pwd}'
-  exit 0
-fi
 
-time_success "✓ Stopwatch stopped"
-printf 'ID: %s\n' "$id"
-printf 'Elapsed: %s\n' "$(time_format_duration "$elapsed")"
-if [ -n "$label" ]; then
-  printf 'Label: %s\n' "$label"
-fi
+try:
+    raise SystemExit(main())
+except WhoraError as exc:
+    raise SystemExit(main_error(exc))

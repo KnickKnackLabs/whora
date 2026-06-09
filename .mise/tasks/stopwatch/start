@@ -16,16 +16,7 @@ import sys
 
 sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
 
-from whora import (
-    StartArgs,
-    TimerStore,
-    WhoraError,
-    bool_env,
-    main_error,
-    normalize_empty,
-    stopwatch_start,
-    usage_words,
-)
+from whora import StartArgs, TimerStore, WhoraError, bool_env, main_error, normalize_empty, stopwatch_start, usage_words
 
 
 def main() -> int:
@@ -37,8 +28,7 @@ def main() -> int:
         json_output=bool_env(os.environ.get("usage_json")),
         origin_pwd=os.environ.get("MISE_ORIGINAL_CWD") or os.getcwd(),
     )
-    store = TimerStore.from_env(os.environ)
-    return stopwatch_start(store, args)
+    return stopwatch_start(TimerStore.from_env(os.environ), args)
 
 
 try:

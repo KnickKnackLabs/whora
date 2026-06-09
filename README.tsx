@@ -139,7 +139,7 @@ mise run countdown:stop --id ci-check`}</CodeBlock>
         <Item><Bold>Metadata stays editable.</Bold> Use <Code>update</Code> tasks to set/clear labels and add/remove tags.</Item>
         <Item><Bold>Silent countdowns by default.</Bold> A countdown is considered fired when its deadline passes. Pass <Code>--notify</Code> only when you want a terminal bell/message.</Item>
         <Item><Bold>Human and machine surfaces are separate.</Bold> Default output uses gum where helpful; <Code>--json</Code> stays plain.</Item>
-        <Item><Bold>State is local.</Bold> Whora stores state under <Code>{'${WHORA_STATE_DIR}'}</Code>, then <Code>{'${XDG_STATE_HOME}/whora'}</Code>, then <Code>~/.local/state/whora</Code>.</Item>
+        <Item><Bold>State is local and simple.</Bold> Whora stores one JSON file per timer under <Code>{'${WHORA_STATE_DIR}'}</Code>, then <Code>{'${XDG_STATE_HOME}/whora'}</Code>, then <Code>~/.local/state/whora</Code>.</Item>
       </List>
     </Section>
 
