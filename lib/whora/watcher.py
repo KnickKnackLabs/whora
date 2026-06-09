@@ -4,10 +4,12 @@ import os
 import signal
 import subprocess
 import sys
+from collections.abc import Mapping
+from contextlib import suppress
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
-WATCHER_CODE = r'''
+WATCHER_CODE = r"""
 import json
 import os
 import sys
@@ -57,7 +59,7 @@ try:
             tty.write("\n")
 except Exception:
     raise SystemExit(0)
-'''
+"""
 
 
 def start_countdown_watcher(path: Path, seconds: int, id: str, label: str) -> int:
@@ -94,7 +96,5 @@ def stop_countdown_worker(timer: Mapping[str, Any]) -> None:
         pid = timer.get(field)
         if not pid_alive(pid):
             continue
-        try:
+        with suppress(ProcessLookupError, PermissionError, ValueError, TypeError):
             os.kill(int(pid), signal.SIGTERM)  # type: ignore[arg-type]
-        except (ProcessLookupError, PermissionError, ValueError, TypeError):
-            pass

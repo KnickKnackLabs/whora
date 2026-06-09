@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from .clock import epoch_now, format_duration, iso_now
 from .ids import require_id
@@ -164,7 +165,8 @@ def countdown_status(store: TimerStore, args: StatusArgs) -> int:
     if args.json_output:
         print_json(items)
     elif items:
-        table(["ID", "STATUS", "REMAINING", "ELAPSED", "LABEL", "TAGS", "NOTE"], [countdown_row(item) for item in items])
+        headers = ["ID", "STATUS", "REMAINING", "ELAPSED", "LABEL", "TAGS", "NOTE"]
+        table(headers, [countdown_row(item) for item in items])
     else:
         dim("No countdowns")
     return 0

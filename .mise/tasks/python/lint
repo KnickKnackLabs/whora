@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+#MISE description="Run Python lint and format checks"
+#USAGE example "mise run python:lint" header="Check Python code style"
+set -euo pipefail
+
+cd "$MISE_CONFIG_ROOT"
+
+targets=(
+  lib
+  test/python
+  .mise/tasks/countdown/_default
+  .mise/tasks/countdown/start
+  .mise/tasks/countdown/status
+  .mise/tasks/countdown/stop
+  .mise/tasks/countdown/update
+  .mise/tasks/stopwatch/_default
+  .mise/tasks/stopwatch/start
+  .mise/tasks/stopwatch/status
+  .mise/tasks/stopwatch/stop
+  .mise/tasks/stopwatch/update
+)
+
+uv run --locked ruff check "${targets[@]}"
+# Do not run ruff format on mise task files: it rewrites #MISE/#USAGE
+# directives into spaced comments that mise intentionally ignores.
+uv run --locked ruff format --check lib test/python

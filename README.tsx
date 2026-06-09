@@ -1,5 +1,6 @@
 /** @jsxImportSource jsx-md */
 
+import { execFileSync } from "child_process";
 import { existsSync, readFileSync, readdirSync } from "fs";
 import { join, resolve } from "path";
 
@@ -57,6 +58,15 @@ function countBatsTests(): number {
     .match(/@test\s+"/g)?.length ?? 0;
 }
 
+function countPytestTests(): number {
+  const output = execFileSync("uv", ["run", "--locked", "pytest", "--collect-only", "-q"], {
+    cwd: REPO_DIR,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  return output.split("\n").filter((line) => line.includes("::")).length;
+}
+
 function configuredLints(): string[] {
   const miseToml = read(join(REPO_DIR, "mise.toml"));
   const start = miseToml.indexOf("[_.codebase]");
@@ -73,7 +83,9 @@ function configuredLints(): string[] {
   return [...list.matchAll(/"([^"]+)"/g)].map((match) => match[1]);
 }
 
-const testCount = countBatsTests();
+const batsTestCount = countBatsTests();
+const pytestTestCount = countPytestTests();
+const totalTestCount = batsTestCount + pytestTestCount;
 const lints = configuredLints();
 
 const readme = (
@@ -88,8 +100,10 @@ const readme = (
       <Paragraph>{PROJECT.tagline}</Paragraph>
 
       <Badges>
-        <Badge label="shape" value="mise + BATS" color="4EAA25" logo="gnubash" logoColor="white" />
-        <Badge label="tests" value={`${testCount}`} color="brightgreen" href="test/" />
+        <Badge label="shape" value="mise + Python" color="3776AB" logo="python" logoColor="white" />
+        <Badge label="tests" value={`${totalTestCount}`} color="brightgreen" href="test/" />
+        <Badge label="BATS" value={`${batsTestCount}`} color="brightgreen" href="test/" />
+        <Badge label="pytest" value={`${pytestTestCount}`} color="brightgreen" href="test/python/" />
         <Badge label="lints" value={`${lints.length}`} color="blue" />
         <Badge label="README" value="TSX" color="f472b6" />
         <Badge label="License" value={PROJECT.license} color="blue" href="LICENSE" />
@@ -168,8 +182,14 @@ git diff --check`}</CodeBlock>
 
       <Paragraph>
         {"The current suite has "}
-        <Bold>{`${testCount} tests`}</Bold>
-        {" and "}
+        <Bold>{`${totalTestCount} tests`}</Bold>
+        {" ("}
+        <Bold>{`${batsTestCount} BATS`}</Bold>
+        {" + "}
+        <Bold>{`${pytestTestCount} pytest`}</Bold>
+        {"). "}
+        <Code>mise run test</Code>
+        {" runs BATS, Python unit tests, and ruff lint/format checks. The repo also has "}
         <Bold>{`${lints.length} convention lints`}</Bold>
         {" configured."}
       </Paragraph>

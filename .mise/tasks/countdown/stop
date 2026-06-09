@@ -12,7 +12,7 @@ import sys
 
 sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
 
-from whora import StopArgs, TimerStore, WhoraError, bool_env, main_error, normalize_empty, countdown_stop
+from whora import StopArgs, TimerStore, WhoraError, bool_env, countdown_stop, main_error, normalize_empty
 
 
 def main() -> int:
@@ -26,4 +26,4 @@ def main() -> int:
 try:
     raise SystemExit(main())
 except WhoraError as exc:
-    raise SystemExit(main_error(exc))
+    raise SystemExit(main_error(exc)) from None

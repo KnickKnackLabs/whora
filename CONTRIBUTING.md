@@ -16,9 +16,10 @@ mise run doctor
 ## Development notes
 
 - Public behavior lives in Python file tasks under `.mise/tasks/`.
-- Shared timer logic lives in `lib/whora.py`; task files should stay thin env-to-args adapters.
+- Shared timer logic lives in the `lib/whora/` package; task files should stay thin env-to-args adapters.
 - Runtime state is one JSON file per timer under `stopwatches/` or `countdowns/`.
-- Tests call tasks through `mise run` via `test/test_helper.bash`; do not call task scripts directly.
+- BATS tests call tasks through `mise run` via `test/test_helper.bash`; do not call task scripts directly.
+- Python unit tests live under `test/python/` and run through `uv` from the repo `pyproject.toml`.
 - Human-facing output should use gum when it improves scanability; JSON output should stay plain.
 - Countdown notification is opt-in. Avoid introducing long-running background processes for silent countdowns.
 

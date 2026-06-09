@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+from collections.abc import Mapping
+from contextlib import suppress
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 
 def write_json_atomic(path: Path, data: Mapping[str, Any]) -> None:
@@ -16,8 +18,6 @@ def write_json_atomic(path: Path, data: Mapping[str, Any]) -> None:
             tmp.write("\n")
         os.replace(tmp_name, path)
     except Exception:
-        try:
+        with suppress(FileNotFoundError):
             os.unlink(tmp_name)
-        except FileNotFoundError:
-            pass
         raise

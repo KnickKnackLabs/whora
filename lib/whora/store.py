@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import secrets
+from collections.abc import Mapping
+from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 from .ids import require_id
 from .jsonio import write_json_atomic
@@ -16,7 +18,7 @@ class TimerStore:
         self.root = root
 
     @classmethod
-    def from_env(cls, env: Mapping[str, str]) -> "TimerStore":
+    def from_env(cls, env: Mapping[str, str]) -> TimerStore:
         if env.get("WHORA_STATE_DIR"):
             return cls(Path(env["WHORA_STATE_DIR"]))
         if env.get("XDG_STATE_HOME"):
@@ -79,7 +81,5 @@ class TimerStore:
 
     def delete_timer(self, kind: str, id: str) -> None:
         path = self.timer_path(kind, id)
-        try:
+        with suppress(FileNotFoundError):
             path.unlink()
-        except FileNotFoundError:
-            pass

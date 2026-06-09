@@ -4,8 +4,9 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Mapping, Sequence
 from shutil import which
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 
 def print_json(data: Any) -> None:

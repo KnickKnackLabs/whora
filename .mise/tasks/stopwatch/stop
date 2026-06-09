@@ -26,4 +26,4 @@ def main() -> int:
 try:
     raise SystemExit(main())
 except WhoraError as exc:
-    raise SystemExit(main_error(exc))
+    raise SystemExit(main_error(exc)) from None
