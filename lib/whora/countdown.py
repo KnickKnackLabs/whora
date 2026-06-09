@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -101,8 +102,10 @@ def countdown_start(store: TimerStore, args: CountdownStartArgs) -> int:
 
     now = epoch_now()
     timer: dict[str, Any] = {
+        "schema_version": 1,
         "kind": "countdown",
         "id": id,
+        "run_token": secrets.token_hex(16),
         "label": args.label,
         "tags": list(args.tags),
         "duration_seconds": args.duration_seconds,
@@ -117,7 +120,9 @@ def countdown_start(store: TimerStore, args: CountdownStartArgs) -> int:
     write_json_atomic(path, timer)
 
     if args.notify:
-        timer["watcher_pid"] = start_countdown_watcher(path, args.duration_seconds, id, args.label)
+        timer["watcher_pid"] = start_countdown_watcher(
+            path, args.duration_seconds, id, str(timer["run_token"]), args.label
+        )
         write_json_atomic(path, timer)
 
     status = countdown_status_object(timer, path)

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import os
-import signal
 import subprocess
 import sys
 from collections.abc import Mapping
-from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -20,8 +18,9 @@ from pathlib import Path
 path = Path(sys.argv[1])
 seconds = int(sys.argv[2])
 timer_id = sys.argv[3]
-label = sys.argv[4]
-notify_tty = sys.argv[5]
+run_token = sys.argv[4]
+label = sys.argv[5]
+notify_tty = sys.argv[6]
 
 def write_json_atomic(target, data):
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -38,16 +37,25 @@ def write_json_atomic(target, data):
             pass
         raise
 
-try:
-    time.sleep(seconds)
+def read_current_timer():
     if not path.exists():
         raise SystemExit(0)
-
     with path.open("r", encoding="utf-8") as file:
         timer = json.load(file)
-    if timer.get("id") != timer_id:
+    if timer.get("id") != timer_id or timer.get("run_token") != run_token:
         raise SystemExit(0)
+    return timer
 
+try:
+    deadline = time.monotonic() + seconds
+    while True:
+        timer = read_current_timer()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+        time.sleep(min(1, remaining))
+
+    timer = read_current_timer()
     timer["fired_epoch"] = int(time.time())
     write_json_atomic(path, timer)
 
@@ -62,10 +70,10 @@ except Exception:
 """
 
 
-def start_countdown_watcher(path: Path, seconds: int, id: str, label: str) -> int:
+def start_countdown_watcher(path: Path, seconds: int, id: str, run_token: str, label: str) -> int:
     notify_tty = "/dev/tty" if sys.stderr.isatty() else ""
     process = subprocess.Popen(
-        [sys.executable, "-c", WATCHER_CODE, str(path), str(seconds), id, label, notify_tty],
+        [sys.executable, "-c", WATCHER_CODE, str(path), str(seconds), id, run_token, label, notify_tty],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -92,9 +100,4 @@ def pid_alive(pid: object) -> bool:
 
 
 def stop_countdown_worker(timer: Mapping[str, Any]) -> None:
-    for field in ("sleep_pid", "watcher_pid"):
-        pid = timer.get(field)
-        if not pid_alive(pid):
-            continue
-        with suppress(ProcessLookupError, PermissionError, ValueError, TypeError):
-            os.kill(int(pid), signal.SIGTERM)  # type: ignore[arg-type]
+    _ = timer

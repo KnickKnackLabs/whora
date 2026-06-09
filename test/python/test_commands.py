@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 
 import pytest
 import whora.countdown as countdown_mod
@@ -20,7 +22,7 @@ from whora import (
     stopwatch_stop,
     stopwatch_update,
 )
-from whora.watcher import pid_alive
+from whora.watcher import WATCHER_CODE, pid_alive
 
 
 def read_json_output(capsys):
@@ -177,6 +179,38 @@ def test_countdown_start_replace_overwrites_existing_timer(tmp_path, capsys):
     stored, _ = store.read_timer("countdown", "tea")
     assert stored["label"] == "new"
     assert stored["duration_seconds"] == 30
+
+
+def test_stale_countdown_watcher_cannot_mark_replaced_timer_fired(tmp_path):
+    path = tmp_path / "countdowns" / "tea.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(
+        json.dumps(
+            {
+                "kind": "countdown",
+                "id": "tea",
+                "label": "new timer",
+                "duration_seconds": 30,
+                "started_epoch": 100,
+                "deadline_epoch": 130,
+                "run_token": "new-token",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", WATCHER_CODE, str(path), "0", "tea", "old-token", "old timer", ""],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    stored = json.loads(path.read_text(encoding="utf-8"))
+    assert stored["run_token"] == "new-token"
+    assert stored["label"] == "new timer"
+    assert "fired_epoch" not in stored
 
 
 def test_countdown_update_adds_and_removes_tags(tmp_path, capsys):

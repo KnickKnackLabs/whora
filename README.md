@@ -7,9 +7,9 @@
 Ask what hour it is, then make the work answer.
 
 ![shape: mise + Python](https://img.shields.io/badge/shape-mise%20%2B%20Python-3776AB?style=flat&logo=python&logoColor=white)
-[![tests: 60](https://img.shields.io/badge/tests-60-brightgreen?style=flat)](test/)
+[![tests: 61](https://img.shields.io/badge/tests-61-brightgreen?style=flat)](test/)
 [![BATS: 17](https://img.shields.io/badge/BATS-17-brightgreen?style=flat)](test/)
-[![pytest: 43](https://img.shields.io/badge/pytest-43-brightgreen?style=flat)](test/python/)
+[![pytest: 44](https://img.shields.io/badge/pytest-44-brightgreen?style=flat)](test/python/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -76,7 +76,7 @@ mise exec -- readme build --check
 git diff --check
 ```
 
-The current suite has **60 tests** (**17 BATS** + **43 pytest**). `mise run test` runs BATS, Python unit tests, and ruff lint/format checks. The repo also has **9 convention lints** configured.
+The current suite has **61 tests** (**17 BATS** + **44 pytest**). `mise run test` runs BATS, Python unit tests, and ruff lint/format checks. The repo also has **9 convention lints** configured.
 
 <div align="center">
 
