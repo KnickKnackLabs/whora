@@ -6,8 +6,10 @@
 
 Ask what hour it is, then make the work answer.
 
-![shape: mise + BATS](https://img.shields.io/badge/shape-mise%20%2B%20BATS-4EAA25?style=flat&logo=gnubash&logoColor=white)
-[![tests: 16](https://img.shields.io/badge/tests-16-brightgreen?style=flat)](test/)
+![shape: mise + Python](https://img.shields.io/badge/shape-mise%20%2B%20Python-3776AB?style=flat&logo=python&logoColor=white)
+[![tests: 60](https://img.shields.io/badge/tests-60-brightgreen?style=flat)](test/)
+[![BATS: 17](https://img.shields.io/badge/BATS-17-brightgreen?style=flat)](test/)
+[![pytest: 43](https://img.shields.io/badge/pytest-43-brightgreen?style=flat)](test/python/)
 ![lints: 9](https://img.shields.io/badge/lints-9-blue?style=flat)
 ![README: TSX](https://img.shields.io/badge/README-TSX-f472b6?style=flat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
@@ -44,7 +46,7 @@ When installed as a shiv package, the same task names are intended to be availab
 - **Metadata stays editable.** Use `update` tasks to set/clear labels and add/remove tags.
 - **Silent countdowns by default.** A countdown is considered fired when its deadline passes. Pass `--notify` only when you want a terminal bell/message.
 - **Human and machine surfaces are separate.** Default output uses gum where helpful; `--json` stays plain.
-- **State is local.** Whora stores state under `${WHORA_STATE_DIR}`, then `${XDG_STATE_HOME}/whora`, then `~/.local/state/whora`.
+- **State is local and simple.** Whora stores one JSON file per timer under `${WHORA_STATE_DIR}`, then `${XDG_STATE_HOME}/whora`, then `~/.local/state/whora`.
 
 ## Examples
 
@@ -74,7 +76,7 @@ mise exec -- readme build --check
 git diff --check
 ```
 
-The current suite has **16 tests** and **9 convention lints** configured.
+The current suite has **60 tests** (**17 BATS** + **43 pytest**). `mise run test` runs BATS, Python unit tests, and ruff lint/format checks. The repo also has **9 convention lints** configured.
 
 <div align="center">
 

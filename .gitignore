@@ -9,5 +9,9 @@ mise.local.toml
 *.log
 tmp/
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+
 # JavaScript package manager noise if a copied repo grows one
 node_modules/

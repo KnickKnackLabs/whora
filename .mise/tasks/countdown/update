@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S uv run --script
 #MISE description="Update countdown metadata"
 #USAGE flag "--id <id>" required=#true help="Countdown id"
 #USAGE flag "--label <label>" default="" help="Set the human label"
@@ -8,77 +8,41 @@
 #USAGE flag "--clear-tags" default=#false help="Remove all tags before adding new tags"
 #USAGE flag "--json" default=#false help="Print machine-readable JSON"
 #USAGE example "mise run countdown:update --id tea --label 'check tea' --tag kitchen" header="Update label and tags"
-set -euo pipefail
+# /// script
+# requires-python = ">=3.10"
+# ///
 
-source "$MISE_CONFIG_ROOT/lib/time.sh"
+import os
+import sys
 
-id="$(time_normalize_empty "${usage_id:-}")"
-label="$(time_normalize_empty "${usage_label:-}")"
-clear_label="${usage_clear_label:-false}"
-clear_tags="${usage_clear_tags:-false}"
-json="${usage_json:-false}"
-time_require_id "$id"
+sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
 
-dir="$(time_item_dir countdown "$id")"
-if [ ! -d "$dir" ]; then
-  printf 'time: no such countdown: %s\n' "$id" >&2
-  exit 1
-fi
+from whora import (
+    TimerStore,
+    UpdateArgs,
+    WhoraError,
+    bool_env,
+    countdown_update,
+    main_error,
+    normalize_empty,
+    usage_words,
+)
 
-add_tags=()
-while IFS= read -r tag; do
-  add_tags+=("$tag")
-done < <(time_usage_words "${usage_tag:-}")
-remove_tags=()
-while IFS= read -r tag; do
-  remove_tags+=("$tag")
-done < <(time_usage_words "${usage_remove_tag:-}")
 
-changed=false
-if [ "$clear_label" = "true" ]; then
-  time_write_field "$dir" label ""
-  changed=true
-elif [ -n "$label" ]; then
-  time_write_field "$dir" label "$label"
-  changed=true
-fi
+def main() -> int:
+    args = UpdateArgs(
+        id=normalize_empty(os.environ.get("usage_id")),
+        label=normalize_empty(os.environ.get("usage_label")),
+        clear_label=bool_env(os.environ.get("usage_clear_label")),
+        add_tags=usage_words(os.environ.get("usage_tag")),
+        remove_tags=usage_words(os.environ.get("usage_remove_tag")),
+        clear_tags=bool_env(os.environ.get("usage_clear_tags")),
+        json_output=bool_env(os.environ.get("usage_json")),
+    )
+    return countdown_update(TimerStore.from_env(os.environ), args)
 
-if [ "$clear_tags" = "true" ]; then
-  rm -f "$dir/tags"
-  changed=true
-fi
-if [ ${#remove_tags[@]} -gt 0 ]; then
-  time_remove_tags "$dir" "${remove_tags[@]}"
-  changed=true
-fi
-if [ ${#add_tags[@]} -gt 0 ]; then
-  time_add_tags "$dir" "${add_tags[@]}"
-  changed=true
-fi
 
-if ! $changed; then
-  printf 'time: nothing to update for countdown %s\n' "$id" >&2
-  exit 1
-fi
-
-if [ "$json" = "true" ]; then
-  time_countdown_json "$dir"
-  exit 0
-fi
-
-time_success "✓ Countdown updated"
-printf 'ID: %s\n' "$id"
-if ! current_label="$(time_read_field "$dir" label)"; then
-  current_label=""
-fi
-current_tags="$(time_tags_inline "$dir")"
-if [ -n "$current_label" ]; then
-  printf 'Label: %s\n' "$current_label"
-else
-  printf 'Label: —\n'
-fi
-if [ -n "$current_tags" ]; then
-  printf 'Tags: %s\n' "$current_tags"
-else
-  printf 'Tags: —\n'
-fi
+try:
+    raise SystemExit(main())
+except WhoraError as exc:
+    raise SystemExit(main_error(exc)) from None

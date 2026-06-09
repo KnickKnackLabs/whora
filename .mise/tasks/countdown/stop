@@ -1,85 +1,29 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S uv run --script
 #MISE description="Stop a countdown"
 #USAGE flag "--id <id>" required=#true help="Countdown id"
 #USAGE flag "--json" default=#false help="Print machine-readable JSON"
 #USAGE example "mise run countdown:stop --id tea" header="Stop a named countdown"
-set -euo pipefail
+# /// script
+# requires-python = ">=3.10"
+# ///
 
-source "$MISE_CONFIG_ROOT/lib/time.sh"
+import os
+import sys
 
-id="$(time_normalize_empty "${usage_id:-}")"
-json="${usage_json:-false}"
-time_require_id "$id"
+sys.path.insert(0, os.environ["MISE_CONFIG_ROOT"] + "/lib")
 
-dir="$(time_item_dir countdown "$id")"
-if [ ! -d "$dir" ]; then
-  printf 'time: no such countdown: %s\n' "$id" >&2
-  exit 1
-fi
+from whora import StopArgs, TimerStore, WhoraError, bool_env, countdown_stop, main_error, normalize_empty
 
-if ! started_epoch="$(time_read_field "$dir" started_epoch)"; then
-  printf 'time: invalid countdown state: %s\n' "$dir" >&2
-  exit 1
-fi
-if ! deadline_epoch="$(time_read_field "$dir" deadline_epoch)"; then
-  printf 'time: invalid countdown state: %s\n' "$dir" >&2
-  exit 1
-fi
-if ! duration="$(time_read_field "$dir" duration_seconds)"; then
-  duration=$((deadline_epoch - started_epoch))
-fi
-if ! label="$(time_read_field "$dir" label)"; then
-  label=""
-fi
-if ! started_at="$(time_read_field "$dir" started_at)"; then
-  started_at=""
-fi
-if ! origin_pwd="$(time_read_field "$dir" origin_pwd)"; then
-  origin_pwd=""
-fi
-tags_json="$(time_tags_json "$dir")"
 
-time_stop_countdown_worker "$dir"
-now="$(time_epoch_now)"
-elapsed=$((now - started_epoch))
-remaining=$((deadline_epoch - now))
-overdue=0
-status="stopped"
-if [ "$remaining" -le 0 ]; then
-  overdue=$((0 - remaining))
-  remaining=0
-fi
-rm -rf "$dir"
+def main() -> int:
+    args = StopArgs(
+        id=normalize_empty(os.environ.get("usage_id")),
+        json_output=bool_env(os.environ.get("usage_json")),
+    )
+    return countdown_stop(TimerStore.from_env(os.environ), args)
 
-if [ "$json" = "true" ]; then
-  jq -nc \
-    --arg kind "countdown" \
-    --arg id "$id" \
-    --arg status "$status" \
-    --arg label "$label" \
-    --arg started_at "$started_at" \
-    --arg stopped_at "$(time_iso_now)" \
-    --arg origin_pwd "$origin_pwd" \
-    --argjson started_epoch "$started_epoch" \
-    --argjson stopped_epoch "$now" \
-    --argjson deadline_epoch "$deadline_epoch" \
-    --argjson duration_seconds "$duration" \
-    --argjson elapsed_seconds "$elapsed" \
-    --argjson remaining_seconds "$remaining" \
-    --argjson overdue_seconds "$overdue" \
-    --argjson tags "$tags_json" \
-    '{kind:$kind,id:$id,status:$status,label:$label,tags:$tags,started_at:$started_at,started_epoch:$started_epoch,stopped_at:$stopped_at,stopped_epoch:$stopped_epoch,deadline_epoch:$deadline_epoch,duration_seconds:$duration_seconds,elapsed_seconds:$elapsed_seconds,remaining_seconds:$remaining_seconds,overdue_seconds:$overdue_seconds,origin_pwd:$origin_pwd}'
-  exit 0
-fi
 
-time_success "✓ Countdown stopped"
-printf 'ID: %s\n' "$id"
-printf 'Elapsed: %s\n' "$(time_format_duration "$elapsed")"
-if [ "$remaining" -gt 0 ]; then
-  printf 'Remaining: %s\n' "$(time_format_duration "$remaining")"
-else
-  printf 'Overdue: %s\n' "$(time_format_duration "$overdue")"
-fi
-if [ -n "$label" ]; then
-  printf 'Label: %s\n' "$label"
-fi
+try:
+    raise SystemExit(main())
+except WhoraError as exc:
+    raise SystemExit(main_error(exc)) from None

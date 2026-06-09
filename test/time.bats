@@ -9,17 +9,16 @@ setup() {
 }
 
 teardown() {
-  local pid_file pid
+  local timer_file pid
   if [ -d "$WHORA_STATE_DIR/countdowns" ]; then
-    for pid_file in "$WHORA_STATE_DIR"/countdowns/*/pid "$WHORA_STATE_DIR"/countdowns/*/sleep_pid; do
-      [ -f "$pid_file" ] || continue
-      if IFS= read -r pid < "$pid_file"; then
-        if [ -n "$pid" ]; then
-          if kill -0 "$pid" >/dev/null 2>&1; then
-            kill "$pid" >/dev/null 2>&1
-          fi
+    for timer_file in "$WHORA_STATE_DIR"/countdowns/*.json; do
+      [ -f "$timer_file" ] || continue
+      while IFS= read -r pid; do
+        [ -n "$pid" ] || continue
+        if kill -0 "$pid" >/dev/null 2>&1; then
+          kill "$pid" >/dev/null 2>&1
         fi
-      fi
+      done < <(jq -r '[.watcher_pid, .sleep_pid] | .[] | select(type == "number")' "$timer_file" 2>/dev/null)
     done
   fi
   rm -rf "$WHORA_STATE_DIR"
@@ -169,6 +168,21 @@ json_value() {
   [ "$status" -eq 0 ]
   [ "$(json_value '.status')" = "stopped" ]
   [ "$(json_value '.remaining_seconds | type')" = "number" ]
+}
+
+@test "state uses one json file per timer" {
+  run whora stopwatch:start --id file-sw --label "file stopwatch" --tag shape=json --json
+  [ "$status" -eq 0 ]
+  [ -f "$WHORA_STATE_DIR/stopwatches/file-sw.json" ]
+  [ ! -d "$WHORA_STATE_DIR/stopwatches/file-sw" ]
+  [ "$(jq -r '.id' "$WHORA_STATE_DIR/stopwatches/file-sw.json")" = "file-sw" ]
+  [ "$(jq -r '.tags[0]' "$WHORA_STATE_DIR/stopwatches/file-sw.json")" = "shape=json" ]
+
+  run whora countdown:start 20s --id file-cd --quiet --json
+  [ "$status" -eq 0 ]
+  [ -f "$WHORA_STATE_DIR/countdowns/file-cd.json" ]
+  [ ! -d "$WHORA_STATE_DIR/countdowns/file-cd" ]
+  [ "$(jq -r '.id' "$WHORA_STATE_DIR/countdowns/file-cd.json")" = "file-cd" ]
 }
 
 @test "status supports label and tag filters" {

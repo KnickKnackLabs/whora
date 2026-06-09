@@ -1,0 +1,36 @@
+[project]
+name = "whora"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4,<9",
+  "ruff>=0.14,<0.15",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["lib"]
+testpaths = ["test/python"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-include = [".mise/tasks/countdown/*", ".mise/tasks/stopwatch/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+  # mise intentionally injects lowercase usage_* env vars.
+  "SIM112",
+]
+
+[tool.ruff.lint.per-file-ignores]
+".mise/tasks/*/*" = [
+  # #USAGE examples are read by mise/usage; wrapping them would break the metadata.
+  "E501",
+]

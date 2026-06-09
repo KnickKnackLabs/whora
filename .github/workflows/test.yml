@@ -30,13 +30,11 @@ jobs:
         with:
           install: true
 
-      - name: Run tests
+      - name: Run tests and Python lint
         run: mise run test
 
       - name: Run codebase lints
         run: codebase lint "$PWD"
 
       - name: Check README.md is up to date
-        uses: KnickKnackLabs/readme@v0.3.1
-        with:
-          check: true
+        run: mise exec -- readme build --check
