@@ -20,7 +20,7 @@ targets=(
   .mise/tasks/stopwatch/update
 )
 
-uv run --locked ruff check "${targets[@]}"
+uv run --locked ruff check ${targets[@]+"${targets[@]}"}
 # Do not run ruff format on mise task files: it rewrites #MISE/#USAGE
 # directives into spaced comments that mise intentionally ignores.
 uv run --locked ruff format --check lib test/python

@@ -5,6 +5,7 @@
 #USAGE example "mise run test" header="Run full validation: BATS, pytest, and ruff"
 #USAGE example "mise run test skeleton" header="Run a specific BATS suite by name"
 #USAGE example "mise run test --filter doctor" header="Filter BATS tests by name"
+#USAGE example "mise run test --jobs 4" header="Run isolated BATS tests in parallel"
 set -euo pipefail
 
 TEST_DIR="$MISE_CONFIG_ROOT/test"
@@ -38,7 +39,7 @@ if [ ${#args[@]} -eq 0 ]; then
   full_validation=true
 fi
 
-bats --print-output-on-failure "${resolved[@]}"
+bats --print-output-on-failure ${resolved[@]+"${resolved[@]}"}
 
 if $full_validation; then
   mise run python:test
